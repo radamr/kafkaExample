@@ -1,0 +1,42 @@
+version: '3.5'
+
+services:
+
+  zookeeper:
+      container_name: cluster_zookeeper
+      image: wurstmeister/zookeeper
+      ports:
+        - "2181:2181"
+        
+  kafka:
+      container_name: cluster_kafka1
+      image: wurstmeister/kafka:1.0.0
+      ports:
+        - "9092:9092"
+      environment:
+        KAFKA_ADVERTISED_LISTENERS: cluster_kafka1
+        KAFKA_ADVERTISED_HOST_NAME: kafka
+        KAFKA_ZOOKEEPER_CONNECT: cluster_zookeeper:2181
+        KAFKA_CREATE_TOPICS: "HelloTopic:1:1"
+      depends_on:
+        - zookeeper
+        
+  kafkaConsumer:
+      build: kafkaconsumer
+      image: kafka/consumer
+      ports:
+        - "8070:8070"
+      depends_on:
+        - kafka
+      environment:
+        spring.kafka.bootstrap-servers: kafka:9092
+        
+  kafkaProducer:
+      build: kafkaproducer
+      image: kafka/producer
+      ports:
+        - "8080:8080"
+      depends_on:
+        - kafka
+      environment:
+        spring.kafka.bootstrap-servers: kafka:9092        
